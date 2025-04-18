@@ -45,7 +45,7 @@ def listen_for_agent_events():
                 on_message_callback=callback,
                 auto_ack=True
             )
-            logger.info("Listening for agent events...")
+            print("Listening for agent events...")
             channel.start_consuming()
 
         except Exception as e:

@@ -21,4 +21,4 @@ COPY src/ .
 # EXPOSE 8000
 
 # Run your main entrypoint
-CMD ["python", "-m", "api.main"]
+CMD ["python", "-u", "-m", "api.main"]

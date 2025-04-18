@@ -6,7 +6,7 @@ def wait_for_rabbitmq(host, port, timeout=30):
     while True:
         try:
             with socket.create_connection((host, int(port)), timeout=2):
-                print("RabbitMQ is up!")
+                print(f"RabbitMQ is up! host: {host}, port: {port}")
                 return
         except Exception:
             if time.time() - start_time > timeout:
