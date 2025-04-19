@@ -1,12 +1,9 @@
 import json
 import pika
 import time
-import logging
 from utils.config import Config
 from models.schedule_manager import schedule_agent_processing
 from models.scheduler import scheduler
-
-logger = logging.getLogger("AzureInteractionsProcessor")
 
 def listen_for_agent_events():
     credentials = pika.PlainCredentials(Config.RABBITMQ_USER, Config.RABBITMQ_PASS)
@@ -27,18 +24,18 @@ def listen_for_agent_events():
                     agent_id = event.get('agent_id')
 
                     if event_message == 'AgentCreated':
-                        logger.info(f"Processing AgentCreated for {agent_id}")
+                        print(f"Processing AgentCreated for {agent_id}")
                         schedule_agent_processing(agent_id)
                     elif event_message == 'delete':
                         job_id = f"agent_{agent_id}"
                         if scheduler.get_job(job_id):
                             scheduler.remove_job(job_id)
-                            logger.info(f"Removed job for {agent_id}")
+                            print(f"Removed job for {agent_id}")
                     else:
-                        logger.info(f"Ignoring event with message: {event_message}")
+                        print(f"Ignoring event with message: {event_message}")
 
                 except Exception as e:
-                    logger.error(f"Error processing message: {e}")
+                    print(f"ERROR: Error processing message: {e}")
 
             channel.basic_consume(
                 queue='agent_events',
@@ -49,5 +46,5 @@ def listen_for_agent_events():
             channel.start_consuming()
 
         except Exception as e:
-            logger.error(f"RabbitMQ connection error: {e}, retrying in 5s...")
+            print(f"ERROR: RabbitMQ connection error: {e}, retrying in 5s...")
             time.sleep(5)

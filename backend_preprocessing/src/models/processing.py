@@ -3,20 +3,17 @@ import csv
 import io
 import redis
 import pika
-import logging
 from utils.azure_storage import read_azure_file, write_azure_file
 from utils.config import Config
 from utils.data_transforms import group_flat_messages, transform_log, create_interactions
 from models.agent import fetch_agent_config
 
-logger = logging.getLogger("AzureInteractionsProcessor")
-
 def process_data(agent_id: str):
-    logger.info(f"Starting data processing for {agent_id}")
+    print(f"Starting data processing for {agent_id}")
 
     agent_config = fetch_agent_config(agent_id)
     if not agent_config:
-        logger.error(f"Configuration not found for {agent_id}")
+        print(f"ERROR: Configuration not found for {agent_id}")
         return
 
     log_path = "amazonq_conversations.json"
@@ -44,7 +41,7 @@ def process_data(agent_id: str):
         write_azure_file(output_file, json.dumps(interactions))
 
         # Redis integration
-        redis_client = redis.Redis(host='redis', port=6379, db=0)
+        redis_client = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, db=0)
         agent_queue_key = f"interactions_queue:{agent_id}"
         for interaction in interactions:
             redis_client.lpush(agent_queue_key, json.dumps(interaction))
@@ -60,7 +57,7 @@ def process_data(agent_id: str):
             connection = pika.BlockingConnection(parameters)
             channel = connection.channel()
             message_body = json.dumps({'agent_id': agent_id})
-            logger.debug(f"Attempting to send message: {message_body}")
+            print(f"DEBUG: Attempting to send message: {message_body}")
             channel.basic_publish(
                 exchange='',
                 routing_key='message_queue',
@@ -70,16 +67,16 @@ def process_data(agent_id: str):
                     expiration='600000'
                 )
             )
-            logger.info(f"✅ Sent ready message for {agent_id}")
+            print(f"✅ Sent ready message for {agent_id}")
         except Exception as e:
-            logger.error(f"❌ Failed to send ready message: {e}")
+            print(f"ERROR: ❌ Failed to send ready message: {e}")
         finally:
             try:
                 connection.close()
             except Exception as close_err:
-                logger.error(f"❌ Error closing connection: {close_err}")
+                print(f"ERROR: ❌ Error closing connection: {close_err}")
 
-        logger.info(f"Processed {len(interactions)} interactions for {agent_id}")
+        print(f"Processed {len(interactions)} interactions for {agent_id}")
 
     except Exception as e:
-        logger.error(f"Processing failed for {agent_id}: {e}")
+        print(f"ERROR: Processing failed for {agent_id}: {e}")

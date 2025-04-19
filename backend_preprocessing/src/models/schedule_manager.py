@@ -1,14 +1,12 @@
 from models.scheduler import scheduler
 from models.agent import fetch_agent_config
 from models.processing import process_data
-import logging
-
-logger = logging.getLogger("AzureInteractionsProcessor")
 
 def schedule_agent_processing(agent_id: str):
     agent_config = fetch_agent_config(agent_id)
+    print(f"DEBUG: Agent configuration for {agent_id}: {agent_config}")
     if not agent_config:
-        logger.error(f"Agent {agent_id} configuration not found")
+        print(f"ERROR: Agent {agent_id} configuration not found")
         return
 
     schedule_config = agent_config.get('scheduling', {})
@@ -17,7 +15,7 @@ def schedule_agent_processing(agent_id: str):
     # Remove existing job if present
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
-        logger.info(f"Removed existing job for agent {agent_id}")
+        print(f"Removed existing job for agent {agent_id}")
 
     try:
         schedule_type = schedule_config.get('type', 'daily')
@@ -66,12 +64,12 @@ def schedule_agent_processing(agent_id: str):
                 id=job_id
             )
         else:
-            logger.error(f"Unsupported schedule type: {schedule_type}")
+            print(f"ERROR: Unsupported schedule type: {schedule_type}")
             return
 
-        logger.info(f"Scheduled {schedule_type} processing for {agent_id}")
-        logger.debug(f"Next run time for agent {agent_id}: {job.next_run_time}")
+        print(f"Scheduled {schedule_type} processing for {agent_id}")
+        print(f"DEBUG: Next run time for agent {agent_id}: {job.next_run_time}")
         process_data(agent_id)  # Immediate first run
 
     except Exception as e:
-        logger.error(f"Scheduling failed for {agent_id}: {e}")
+        print(f"ERROR: Scheduling failed for {agent_id}: {e}")
